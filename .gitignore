@@ -1,0 +1,30 @@
+# Rust
+/target
+/debug
+/release
+**/*.rs.bk
+Cargo.lock
+
+# Build artifacts
+build_err*.txt
+build_log*.txt
+check_output*.txt
+test_output.txt
+*.log
+*.out
+
+# Editors
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__
+*.pyc
+.venv
+venv
