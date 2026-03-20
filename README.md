@@ -1,107 +1,82 @@
 # Epsilon
 
-**Zero-Shot Context Teleportation via Topological Surgery**
+**Zero-Shot Context Transfer via Topological Surgery on Hollow Manifolds**
 
 *Pre-Print Reference Implementation v0.1.0*
 
 > **Author:** Teerth Sharma
-> **Module:** `aether-core` / `epsilon`
 
 ---
 
-## Abstract
+## Overview
 
-Current LLM architectures suffer from severe latency and compute bottlenecks during context loading due to sequential token processing and KV-cache matrix multiplication. This repository implements a novel mechanism for **Zero-Shot Context Teleportation** by structuring the agent's state space as a **hollow cubic manifold** (an S² boundary with Betti number β₂ = 1).
+Epsilon is a research framework for instantaneous geometric state injection between autonomous agents. It structures the agent's cognitive state space as a **hollow S² manifold** (Betti number β₂ = 1), creating an interior void that accepts pre-computed, topologically stable payloads in **O(1)** time — independent of sequence length.
 
-A higher-order manifold can instantaneously inject pre-computed, topologically stable "mental models" directly into the agent's internal void — **bypassing the O(N²) token bottleneck** and enabling instantaneous knowledge transfer between AEGIS-powered autonomous agents.
+This eliminates the O(N²) attention bottleneck during context loading by operating directly on the manifold geometry rather than the token stream.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Epsilon Teleportation Stack                  │
-├─────────────────────────────────────────────────────────────────┤
-│  teleport.rs   │ sys_teleport_context() — Orchestration API    │
-├────────────────┼────────────────────────────────────────────────┤
-│  manifold.rs   │ HollowCubeManifold  — S² void receptacle     │
-│                │ ManifoldPayload     — Teleportable data unit  │
-├────────────────┼────────────────────────────────────────────────┤
-│  governor.rs   │ SurgeryGovernor     — PD controller + permit  │
-│                │ SurgeryPermit       — One-shot derivative lock│
-├────────────────┼────────────────────────────────────────────────┤
-│  memory.rs     │ LivenessAnchor      — Inherited Chebyshev k-σ │
-│                │ ChebyshevGuard      — Eviction safety         │
-└────────────────┴────────────────────────────────────────────────┘
+crates/
+├── aether-core/          # Mathematical foundation
+│   ├── manifold.rs       # ManifoldPoint, SparseAttentionGraph
+│   ├── topology.rs       # Betti numbers, persistent homology
+│   ├── governor.rs       # GeometricGovernor (PD control)
+│   ├── memory.rs         # ManifoldHeap, Chebyshev evictor
+│   └── ...               
+│
+└── epsilon/              # Geometric state transfer (this research)
+    ├── manifold.rs       # HollowCubeManifold, ManifoldPayload
+    ├── governor.rs       # SurgeryGovernor, SurgeryPermit
+    ├── memory.rs         # LivenessAnchor, ChebyshevGuard
+    └── teleport.rs       # sys_teleport_context (orchestration)
 ```
 
-## Mathematical Foundation
+## Key Ideas
 
-### The Hollow Cube (S² Manifold)
+### Hollow Manifold (β₂ = 1)
 
-| Property | Solid Manifold | Hollow Manifold |
-|----------|---------------|-----------------|
+| | Solid | Hollow |
+|---|---|---|
 | β₀ (Components) | 1 | 1 |
 | β₁ (Cycles) | 0 | 0 |
 | β₂ (Voids) | 0 | **1** |
 
-The presence of **β₂ = 1** defines an interior "void" — the secure receptacle for instantaneous geometric injection.
+The void defined by β₂ = 1 is a receptacle. A converged sub-manifold from one agent maps directly into this void — the geometry carries the meaning.
 
 ### Topological Surgery
 
-Context teleportation is modeled as a fiber bundle projection:
-
 ```
-f: D ⊂ M_high → Void(M_recv)
+f: D ⊂ M_source → Void(M_target)
 ```
 
-Where D is a converged sub-manifold from the source agent, injected into the void of the receiving manifold M_recv.
+Injection is guarded by Betti signature verification. The payload must be topologically consistent (β₀ = 1, connected) and the receiver shell must be non-degenerate.
 
-### Safety Mechanisms
+### Safety
 
-1. **Surgery Permit** — Zeroes derivative gain β for one tick to prevent oscillation panic when de/dt → ∞
-2. **Chebyshev Liveness Inheritance** — Pre-ages teleported data with inherited k-σ bounds to prevent eviction
-3. **Wake-Up Rescan** — Verifies Betti boundaries of injected mass against hollow cube inner walls
-
-## Project Structure
-
-```
-crates/
-├── aether-core/          # Mathematical foundation
-│   ├── manifold.rs       # ManifoldPoint, SparseAttentionGraph, TopologicalPipeline
-│   ├── topology.rs       # Betti numbers, persistent homology
-│   ├── governor.rs       # GeometricGovernor (PD controller)
-│   ├── memory.rs         # ManifoldHeap, ChebyshevGuard
-│   ├── state.rs          # SystemState vectors
-│   └── os.rs             # OS primitives
-│
-└── epsilon/              # Context Teleportation (this research)
-    ├── lib.rs            # Documentation & re-exports
-    ├── manifold.rs       # HollowCubeManifold, ManifoldPayload, SparseGraph
-    ├── governor.rs       # SurgeryGovernor, SurgeryPermit
-    ├── memory.rs         # LivenessAnchor, ChebyshevGuard (inherited)
-    └── teleport.rs       # sys_teleport_context system call
-```
+1. **Surgery Permit** — Derivative gain β is zeroed for one tick to absorb the instantaneous state discontinuity without oscillation panic.
+2. **Chebyshev Liveness Inheritance** — Injected data inherits statistical bounds (μ, σ, k) from the source, preventing premature eviction by the receiver's garbage collector.
+3. **Assimilation Rescan** — Betti boundaries are verified before merging payload points into the active shell.
 
 ## Building
 
 ```bash
-# Type-check
 cargo check -p epsilon
-
-# Run tests
 cargo test -p epsilon
-
-# Run all workspace tests
 cargo test --workspace
 ```
 
-## Proposed Capabilities (Section 5)
+## Complexity
 
-- **Telepathic Swarm Architecture** — Agent A processes a 1M-token codebase, converges Seal-Loop, teleports Betti-stable manifold to Agents B, C, D. They possess the knowledge instantly at zero inference cost.
+| Operation | Cost |
+|-----------|------|
+| Payload construction | O(P) |
+| Betti verification | O(V+E) |
+| Governor clutch | O(1) |
+| Injection + assimilation | O(P) |
+| **Total pipeline** | **O(P)** |
 
-- **O(1) RAG (Retrieval-Augmented Geometry)** — Instead of retrieving text chunks and re-embedding, the database stores pre-compiled topological shapes and injects them directly into the agent's hollow core.
-
-- **Persistent Manifold Checkpointing** — Serialize converged manifolds to disk. On cold boot, an agent skips all inference and teleports its previous cognitive state back in O(1).
+Where P ≤ 64 payload points. Compare to O(N²) for N-token attention.
 
 ## License
 
