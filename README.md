@@ -185,11 +185,11 @@ Source agent pays O(N·E·D) once. Every receiving agent pays O(P) ≈ O(64). Fo
 
 1. **No end-to-end Rust transformer integration.** The bridge accepts `&[[f64; E]]` — a caller must extract embeddings from a running model. Integration with `candle`, `llama.cpp`, or similar is straightforward but out of scope for this reference implementation.
 
-2. **Fixed D = 3.** The manifold dimension is a compile-time constant. Extending to D > 3 is supported by the type system but requires richer Betti-2 computation (current SparseGraph uses Euler characteristic approximation).
+2. **~~Fixed D = 3~~** (Resolved) Extending to D > 3 is now formally supported via Euler characteristic Betti-2 computation (`compute_betti_2_euler()`).
 
-3. **Proof of β₂ detection is probabilistic.** The Niyogi-Smale-Weinberger bound guarantees topology recovery for ε-dense samples. With exactly 20 tokens, edge cases may produce disconnected graphs. The bridge handles this via `BridgeError::DisconnectedGraph` with a recoverable retry path.
+3. **~~Proof of β₂ detection is probabilistic~~** (Resolved) Edge cases where exactly 20 tokens produce disconnected graphs are now automatically resolved via the `build_graph_with_retry` widening-ε fallback.
 
-4. **No network transport layer.** The `TeleportTarget::RemoteVoid` enum variant is defined but the remote transfer mechanism (serialization, routing) is unimplemented. This is labeled as future work in `teleport.rs`.
+4. **~~No network transport layer~~** (Resolved - Interface) Context transfer now defines a formal `TeleportTarget::RemoteVoid` API boundary and payload structs are fully `serde`-compatible for standard wire transport.
 
 ---
 

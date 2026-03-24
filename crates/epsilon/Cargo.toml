@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "epsilon"
 version = "0.1.0"
 edition = "2021"
@@ -14,3 +14,8 @@ via topological surgery on hollow SÂ² manifolds with Betti number Î²â‚‚
 
 [dependencies]
 libm = { workspace = true }
+serde-big-array = { version = "0.5", optional = true }
+serde = { workspace = true, optional = true }
+
+[features]
+serde = ["dep:serde", "dep:serde-big-array"]

@@ -74,6 +74,7 @@ pub mod manifold;
 pub mod governor;
 pub mod memory;
 pub mod teleport;
+pub mod mock;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Public API Re-exports
@@ -86,4 +87,4 @@ pub use manifold::{
 };
 pub use governor::{SurgeryGovernor, SurgeryPermit};
 pub use memory::{LivenessAnchor, ChebyshevGuard};
-pub use teleport::{TeleportTarget, TeleportResult, sys_teleport_context};
+pub use teleport::{TeleportTarget, TeleportResult, sys_teleport_context, RemoteVoidDescriptor};

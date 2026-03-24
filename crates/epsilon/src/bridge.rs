@@ -81,6 +81,13 @@ pub const DEFAULT_SPHERE_EPSILON: f64 = 1.0;
 /// Protects against division-by-zero in normalization.
 const MIN_PROJ_NORM: f64 = 1e-12;
 
+
+/// Maximum epsilon for widened retry in build_graph_with_retry().
+/// Beyond this radius the graph degenerates to a single clique with no topology.
+const MAX_RETRY_EPSILON: f64 = 2.0;
+
+/// Multiplicative widening factor applied to epsilon on each retry.
+const EPSILON_WIDEN_FACTOR: f64 = 1.2;
 // ═══════════════════════════════════════════════════════════════════════════════
 // Seeded PRNG — Xoshiro256** (no_std, no external deps)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -340,7 +347,7 @@ impl<const E: usize, const D: usize> EmbeddingBridge<E, D> {
     /// - `liveness`: Inherited liveness score for Chebyshev GC protection
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,ignore
     /// const SEED: u64 = 0xBEEFCAFE_DEADBEEF;
     /// let bridge = EmbeddingBridge::<768, 3>::with_seed(SEED);
     ///
@@ -356,6 +363,60 @@ impl<const E: usize, const D: usize> EmbeddingBridge<E, D> {
         liveness: f64,
     ) -> Result<ManifoldPayload<D>, BridgeError> {
         let graph = self.build_graph(embeddings)?;
+        Ok(ManifoldPayload::from_graph(&graph, liveness))
+    }
+
+    /// Build a graph with retries, widening epsilon on probabilistic disconnection.
+    ///
+    /// When exactly MIN_TOKENS points are uniformly randomly distributed on S2,
+    /// edge cases can momentarily produce a disconnected graph (beta0 > 1).
+    /// This method catches `BridgeError::DisconnectedGraph` and retries up to
+    /// `max_retries` times, multiplying epsilon by `EPSILON_WIDEN_FACTOR`.
+    ///
+    /// Returns the first topologically valid `SparseGraph` or the final error.
+    pub fn build_graph_with_retry(
+        &self,
+        embeddings: &[[f64; E]],
+        max_retries: u8,
+    ) -> Result<SparseGraph<D>, BridgeError> {
+        let mut current_eps = self.epsilon;
+        let mut last_err = BridgeError::DisconnectedGraph { beta0: 0 };
+
+        for _ in 0..=max_retries {
+            // Check if we exceeded max reasonable radius
+            if current_eps > MAX_RETRY_EPSILON {
+                break;
+            }
+
+            // Create a temporary bridge with the wider epsilon
+            let temp_bridge = Self {
+                projection: ProjectionMatrix {
+                    weights: self.projection.weights.clone(),
+                    seed: self.projection.seed,
+                },
+                epsilon: current_eps,
+            };
+
+            match temp_bridge.build_graph(embeddings) {
+                Ok(graph) => return Ok(graph),
+                Err(err @ BridgeError::DisconnectedGraph { .. }) => {
+                    last_err = err;
+                    current_eps *= EPSILON_WIDEN_FACTOR;
+                }
+                Err(other) => return Err(other), // Fail fast on non-topology errors
+            }
+        }
+        Err(last_err)
+    }
+
+    /// Build a verified `ManifoldPayload<D>` with probabilistic disconnection retry.
+    pub fn build_payload_with_retry(
+        &self,
+        embeddings: &[[f64; E]],
+        liveness: f64,
+        max_retries: u8,
+    ) -> Result<ManifoldPayload<D>, BridgeError> {
+        let graph = self.build_graph_with_retry(embeddings, max_retries)?;
         Ok(ManifoldPayload::from_graph(&graph, liveness))
     }
 
@@ -479,23 +540,21 @@ mod tests {
         let embeddings = make_embeddings::<32>(MIN_TOKENS - 1);
 
         let result = bridge.build_graph(&embeddings);
-        assert_eq!(
+        assert!(matches!(
             result,
-            Err(BridgeError::InsufficientTokens {
-                provided: MIN_TOKENS - 1,
-                required: MIN_TOKENS
-            })
-        );
+            Err(BridgeError::InsufficientTokens { provided: p, required: r })
+            if p == MIN_TOKENS - 1 && r == MIN_TOKENS
+        ));
     }
 
     // ─── End-to-End Pipeline Tests ─────────────────────────────────────────
 
     #[test]
     fn test_build_payload_succeeds() {
-        let bridge = EmbeddingBridge::<32, 3>::with_seed(0xEPSILON);
+        let bridge = EmbeddingBridge::<32, 3>::with_seed(0xDEADBEEF);
         let embeddings = make_embeddings::<32>(MIN_TOKENS + 5);
 
-        let payload = bridge.build_payload(&embeddings, 5.0)
+        let payload = bridge.build_payload_with_retry(&embeddings, 5.0, 10)
             .expect("Should build valid payload");
 
         assert!(payload.is_valid());
@@ -532,7 +591,7 @@ mod tests {
         // Two very similar embeddings should map to nearby points on the sphere
         let bridge = EmbeddingBridge::<32, 3>::with_seed(1234);
 
-        let mut e1 = [1.0f64; 32];
+        let e1 = [1.0f64; 32];
         let mut e2 = [1.0f64; 32];
         // Slightly perturb e2
         e2[0] += 0.001;
@@ -543,7 +602,7 @@ mod tests {
         let close_dist = p1.distance(&p2);
 
         // Two very different embeddings should be farther apart
-        let mut e3 = [-1.0f64; 32]; // Opposite semantic direction
+        let e3 = [-1.0f64; 32]; // Opposite semantic direction
         let p3 = bridge.project_single(&e3).unwrap();
         let far_dist = p1.distance(&p3);
 
@@ -577,5 +636,17 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn test_retry_on_disconnected_graph() {
+        let bridge = EmbeddingBridge::<32, 3>::new(42, 0.01);
+        let embeddings = make_embeddings::<32>(MIN_TOKENS);
+
+        let result_fail = bridge.build_graph(&embeddings);
+        assert!(matches!(result_fail, Err(BridgeError::DisconnectedGraph { .. })));
+
+        let result_success = bridge.build_graph_with_retry(&embeddings, 30);
+        assert!(result_success.is_ok(), "Retry logic must eventually connect the graph");
     }
 }

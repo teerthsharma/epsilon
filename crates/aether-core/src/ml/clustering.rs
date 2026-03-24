@@ -267,7 +267,7 @@ impl<const D: usize> KMeans<D> {
 /// Automatically determine optimal K using topological analysis
 pub fn auto_k_selection<const D: usize>(data: &[[f64; D]], n: usize, epsilon: f64) -> usize {
     // Build epsilon-neighborhood graph and count connected components (β₀)
-    let mut components = n.min(MAX_POINTS);
+    let mut components = 0;
     let mut visited = [false; MAX_POINTS];
     let n = n.min(MAX_POINTS);
 
@@ -277,7 +277,7 @@ pub fn auto_k_selection<const D: usize>(data: &[[f64; D]], n: usize, epsilon: f6
         }
 
         // BFS from this point
-        components -= 1;
+        components += 1;
         let mut stack = [0usize; 64];
         let mut top = 1;
         stack[0] = start;
@@ -302,8 +302,6 @@ pub fn auto_k_selection<const D: usize>(data: &[[f64; D]], n: usize, epsilon: f6
                 }
             }
         }
-
-        components += 1;
     }
 
     // β₀ = number of connected components = suggested K
