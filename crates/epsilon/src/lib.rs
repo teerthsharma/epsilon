@@ -1,5 +1,5 @@
 //! ═══════════════════════════════════════════════════════════════════════════════
-//! Epsilon — Zero-Shot Context Teleportation via Topological Surgery
+//! Epsilon — Geometric State Transfer via Topological Surgery on Hollow Manifolds
 //! ═══════════════════════════════════════════════════════════════════════════════
 //!
 //! **Pre-Print Reference Implementation v0.1.0**
@@ -21,20 +21,23 @@
 //! # Architecture
 //!
 //! ```text
-//! ┌─────────────────────────────────────────────────────────────────┐
-//! │                    Epsilon Teleportation Stack                  │
-//! ├─────────────────────────────────────────────────────────────────┤
-//! │  teleport.rs   │ sys_teleport_context() — Orchestration API    │
-//! ├────────────────┼────────────────────────────────────────────────┤
-//! │  manifold.rs   │ HollowCubeManifold  — S² void receptacle     │
-//! │                │ ManifoldPayload     — Teleportable data unit  │
-//! ├────────────────┼────────────────────────────────────────────────┤
-//! │  governor.rs   │ SurgeryGovernor     — PD controller + permit  │
-//! │                │ SurgeryPermit       — One-shot derivative lock│
-//! ├────────────────┼────────────────────────────────────────────────┤
-//! │  memory.rs     │ LivenessAnchor      — Inherited Chebyshev k-σ │
-//! │                │ ChebyshevGuard      — Eviction safety         │
-//! └────────────────┴────────────────────────────────────────────────┘
+//! ┌──────────────────────────────────────────────────────────────────────┐
+//! │                        Epsilon Stack                                 │
+//! ├──────────────────┬───────────────────────────────────────────────────┤
+//! │  bridge.rs       │ EmbeddingBridge — ℝ^E → S² (JL + L2 normalize)  │
+//! │                  │ ProjectionMatrix — seeded, deterministic          │
+//! ├──────────────────┼───────────────────────────────────────────────────┤
+//! │  teleport.rs     │ sys_teleport_context() — Orchestration syscall   │
+//! ├──────────────────┼───────────────────────────────────────────────────┤
+//! │  manifold.rs     │ HollowCubeManifold  — S² void receptacle         │
+//! │                  │ ManifoldPayload     — Verified payload unit       │
+//! ├──────────────────┼───────────────────────────────────────────────────┤
+//! │  governor.rs     │ SurgeryGovernor     — PD control + clutch        │
+//! │                  │ SurgeryPermit       — One-shot derivative lock    │
+//! ├──────────────────┼───────────────────────────────────────────────────┤
+//! │  memory.rs       │ LivenessAnchor      — Inherited Chebyshev k-σ    │
+//! │                  │ ChebyshevGuard      — GC eviction safety          │
+//! └──────────────────┴───────────────────────────────────────────────────┘
 //! ```
 //!
 //! # Mathematical Foundation
@@ -66,6 +69,7 @@
 //!
 //! ═══════════════════════════════════════════════════════════════════════════════
 
+pub mod bridge;
 pub mod manifold;
 pub mod governor;
 pub mod memory;
@@ -75,6 +79,7 @@ pub mod teleport;
 // Public API Re-exports
 // ═══════════════════════════════════════════════════════════════════════════════
 
+pub use bridge::{EmbeddingBridge, BridgeError, MIN_TOKENS, DEFAULT_SPHERE_EPSILON};
 pub use manifold::{
     HollowCubeManifold, ManifoldPayload, SurgeryError,
     EpsilonPoint, SparseGraph,

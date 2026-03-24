@@ -1,18 +1,18 @@
-//! ═══════════════════════════════════════════════════════════════════════════════
-//! Epsilon Memory Guards — Chebyshev Liveness Inheritance
-//! ═══════════════════════════════════════════════════════════════════════════════
+﻿//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//! Epsilon Memory Guards â€” Chebyshev Liveness Inheritance
+//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //!
-//! Implements the statistical safety mechanism for teleported context data.
+//! Implements the statistical safety mechanism for Injected context data.
 //!
 //! # Problem (Section 3.2)
 //!
 //! The Chebyshev Evictor guards against false GC collections based on
-//! time-alive and operation counts. Teleported data has t_alive = 0,
+//! time-alive and operation counts. Injected data has t_alive = 0,
 //! making it highly susceptible to immediate eviction.
 //!
 //! # Solution: Signature Inheritance
 //!
-//! The teleported manifold block arrives with an inherited statistical
+//! The Injected manifold block arrives with an inherited statistical
 //! "anchor" from M_high. The [`ChebyshevGuard`] accepts pre-aged
 //! k-standard deviation bounds via [`LivenessAnchor`], guaranteeing
 //! the new context remains inside the safe boundary until the local
@@ -21,35 +21,35 @@
 //! # Mathematical Foundation
 //!
 //! Chebyshev's inequality guarantees that for any distribution with
-//! finite mean μ and standard deviation σ:
+//! finite mean Î¼ and standard deviation Ïƒ:
 //!
 //! ```text
-//!   P(|X - μ| ≥ k·σ) ≤ 1/k²
+//!   P(|X - Î¼| â‰¥ kÂ·Ïƒ) â‰¤ 1/kÂ²
 //!
-//!   Safe boundary: liveness > μ - k·σ
-//!   Default k = 2 → at most 25% false eviction risk
+//!   Safe boundary: liveness > Î¼ - kÂ·Ïƒ
+//!   Default k = 2 â†’ at most 25% false eviction risk
 //! ```
 //!
-//! By inheriting (μ, σ, k) from the source agent, we ensure that
-//! teleported data with liveness = μ + σ (the anchor value) always
+//! By inheriting (Î¼, Ïƒ, k) from the source agent, we ensure that
+//! Injected data with liveness = Î¼ + Ïƒ (the anchor value) always
 //! falls within the safe boundary.
 //!
-//! ═══════════════════════════════════════════════════════════════════════════════
+//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 use libm::sqrt;
 
 /// Inherited statistical anchor from the source agent's manifold.
 ///
-/// When a manifold payload is teleported, its liveness statistics are
+/// When a manifold payload is Injected, its liveness statistics are
 /// foreign to the receiving heap. This anchor carries the source's
 /// Chebyshev bounds so the receiver's evictor can protect the new data
 /// during the assimilation window.
 ///
 /// # Fields
-/// - `mean`: Mean liveness from the source agent's heap (μ)
-/// - `std_dev`: Standard deviation of liveness scores (σ)
+/// - `mean`: Mean liveness from the source agent's heap (Î¼)
+/// - `std_dev`: Standard deviation of liveness scores (Ïƒ)
 /// - `k`: Number of standard deviations for safe boundary (default: 2.0)
-/// - `anchor_liveness`: Recommended initial liveness for teleported objects
+/// - `anchor_liveness`: Recommended initial liveness for Injected objects
 #[derive(Debug, Clone, Copy)]
 pub struct LivenessAnchor {
     pub mean: f64,
@@ -65,7 +65,7 @@ impl LivenessAnchor {
             mean,
             std_dev,
             k,
-            // Anchor at μ + σ to guarantee safety margin
+            // Anchor at Î¼ + Ïƒ to guarantee safety margin
             anchor_liveness: mean + std_dev,
         }
     }
@@ -93,7 +93,7 @@ impl LivenessAnchor {
         }
     }
 
-    /// The lower boundary of the safe region: μ - k·σ
+    /// The lower boundary of the safe region: Î¼ - kÂ·Ïƒ
     pub fn safe_boundary(&self) -> f64 {
         self.mean - (self.k * self.std_dev)
     }
@@ -110,15 +110,15 @@ impl Default for LivenessAnchor {
     }
 }
 
-/// Chebyshev Guard — statistical eviction safety protocol.
+/// Chebyshev Guard â€” statistical eviction safety protocol.
 ///
 /// Determines whether a given liveness score is "safe" (should not be
 /// evicted) based on the population statistics of the heap. Supports
-/// both local computation and inherited anchors for teleported data.
+/// both local computation and inherited anchors for Injected data.
 ///
 /// # Decision Rule
 /// ```text
-///   safe(x) = x ≥ μ  ∨  x > μ - k·σ
+///   safe(x) = x â‰¥ Î¼  âˆ¨  x > Î¼ - kÂ·Ïƒ
 /// ```
 #[derive(Debug, Clone)]
 pub struct ChebyshevGuard {
@@ -154,7 +154,7 @@ impl ChebyshevGuard {
 
     /// Create a guard with inherited statistics from a source agent.
     ///
-    /// Instead of computing from the local heap (where teleported data
+    /// Instead of computing from the local heap (where Injected data
     /// has t_alive = 0), this injects pre-computed bounds from the
     /// source manifold's [`LivenessAnchor`].
     pub fn with_inherited_anchor(anchor: &LivenessAnchor) -> Self {
@@ -174,15 +174,15 @@ impl ChebyshevGuard {
         liveness > boundary
     }
 
-    /// Get the computed safe boundary: μ - k·σ
+    /// Get the computed safe boundary: Î¼ - kÂ·Ïƒ
     pub fn safe_boundary(&self) -> f64 {
         self.mean - (self.k * self.std_dev)
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Unit Tests
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #[cfg(test)]
 mod tests {
@@ -195,9 +195,9 @@ mod tests {
 
         // Mean = 3.0
         assert!((anchor.mean - 3.0).abs() < 1e-10);
-        // Variance = 2.0, StdDev ≈ 1.414
+        // Variance = 2.0, StdDev â‰ˆ 1.414
         assert!((anchor.std_dev - libm::sqrt(2.0)).abs() < 1e-10);
-        // anchor_liveness = μ + σ ≈ 4.414
+        // anchor_liveness = Î¼ + Ïƒ â‰ˆ 4.414
         assert!((anchor.anchor_liveness - (3.0 + libm::sqrt(2.0))).abs() < 1e-10);
     }
 
@@ -205,14 +205,14 @@ mod tests {
     fn test_chebyshev_guard_safety() {
         let guard = ChebyshevGuard::new(3.0, 1.0, 2.0);
 
-        // Above mean → always safe
+        // Above mean â†’ always safe
         assert!(guard.is_safe(5.0));
         assert!(guard.is_safe(3.0));
 
-        // Within k·σ → safe
+        // Within kÂ·Ïƒ â†’ safe
         assert!(guard.is_safe(1.5));
 
-        // Below μ - k·σ = 1.0 → NOT safe
+        // Below Î¼ - kÂ·Ïƒ = 1.0 â†’ NOT safe
         assert!(!guard.is_safe(0.5));
         assert!(!guard.is_safe(0.0));
     }
@@ -225,14 +225,14 @@ mod tests {
 
         let guard = ChebyshevGuard::with_inherited_anchor(&anchor);
 
-        // Teleported object at anchor_liveness must be safe
+        // Injected object at anchor_liveness must be safe
         assert!(
             guard.is_safe(anchor.anchor_liveness),
             "anchor_liveness ({:.2}) must be safe (boundary={:.2})",
             anchor.anchor_liveness, guard.safe_boundary()
         );
 
-        // Object with zero liveness (t_alive=0 without inheritance) → evictable
+        // Object with zero liveness (t_alive=0 without inheritance) â†’ evictable
         assert!(
             !guard.is_safe(0.0),
             "Zero-liveness should be evictable"

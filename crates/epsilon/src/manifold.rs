@@ -1,31 +1,31 @@
-//! ═══════════════════════════════════════════════════════════════════════════════
-//! Epsilon Hollow Cube Manifold & Teleportable Payloads
-//! ═══════════════════════════════════════════════════════════════════════════════
+﻿//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//! Epsilon Hollow Cube Manifold & Injectable Payloads
+//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //!
 //! Implements the core topological structures for Zero-Shot Context
-//! Teleportation. This module defines:
+//! Context Transfer. This module defines:
 //!
-//! 1. [`EpsilonPoint`] — A point in D-dimensional manifold space
-//! 2. [`SparseGraph`] — Sparse attention graph with Betti number computation
-//! 3. [`ManifoldPayload`] — Teleportable data unit with Betti signature
-//! 4. [`HollowCubeManifold`] — S² boundary with β₂ = 1 interior void
+//! 1. [`EpsilonPoint`] â€” A point in D-dimensional manifold space
+//! 2. [`SparseGraph`] â€” Sparse attention graph with Betti number computation
+//! 3. [`ManifoldPayload`] â€” Injectable data unit with Betti signature
+//! 4. [`HollowCubeManifold`] â€” SÂ² boundary with Î²â‚‚ = 1 interior void
 //!
 //! # Mathematical Foundation (Section 2)
 //!
-//! ## The Hollow Cube (S² Manifold)
+//! ## The Hollow Cube (SÂ² Manifold)
 //!
 //! ```text
-//!   Solid Manifold:  β₀ = 1, β₁ = 0, β₂ = 0
-//!   Hollow Manifold: β₀ = 1, β₁ = 0, β₂ = 1
+//!   Solid Manifold:  Î²â‚€ = 1, Î²â‚ = 0, Î²â‚‚ = 0
+//!   Hollow Manifold: Î²â‚€ = 1, Î²â‚ = 0, Î²â‚‚ = 1
 //! ```
 //!
-//! The presence of β₂ = 1 defines an interior "void." This void serves
+//! The presence of Î²â‚‚ = 1 defines an interior "void." This void serves
 //! as the secure receptacle for instantaneous geometric injection.
 //!
 //! ## Topological Surgery & Fiber Bundle Projection
 //!
 //! ```text
-//!   f: D ⊂ M_high → Void(M_recv)
+//!   f: D âŠ‚ M_high â†’ Void(M_recv)
 //! ```
 //!
 //! The injection maps the geometry of D (where the Seal-Loop has
@@ -33,28 +33,28 @@
 //!
 //! ## Wake-Up Rescan (Section 3.3)
 //!
-//! Once data is injected into the β₂ void, it is not immediately active.
+//! Once data is injected into the Î²â‚‚ void, it is not immediately active.
 //! The Bio-Kernel triggers a Wake-Up interrupt, the Seal-Loop verifies
 //! Betti boundaries, and if topologies align, the data is assimilated
 //! in O(1) time relative to token length.
 //!
-//! ═══════════════════════════════════════════════════════════════════════════════
+//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 use libm::sqrt;
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Constants
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /// Maximum points in a sparse graph (memory constraint)
 const MAX_POINTS: usize = 256;
 
-/// Maximum points in a teleportable payload
+/// Maximum points in a Injectable payload
 const MAX_PAYLOAD_POINTS: usize = 64;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// EpsilonPoint — Manifold Point
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// EpsilonPoint â€” Manifold Point
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /// A point in D-dimensional manifold space.
 ///
@@ -73,7 +73,7 @@ impl<const D: usize> EpsilonPoint<D> {
         Self { coords }
     }
 
-    /// Euclidean distance: ||p - q||₂
+    /// Euclidean distance: ||p - q||â‚‚
     pub fn distance(&self, other: &Self) -> f64 {
         let mut sum = 0.0;
         for i in 0..D {
@@ -83,22 +83,22 @@ impl<const D: usize> EpsilonPoint<D> {
         sqrt(sum)
     }
 
-    /// ε-neighborhood test (sparse attention criterion)
+    /// Îµ-neighborhood test (sparse attention criterion)
     pub fn is_neighbor(&self, other: &Self, epsilon: f64) -> bool {
         self.distance(other) < epsilon
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SparseGraph — Sparse Attention Graph with Betti Computation
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// SparseGraph â€” Sparse Attention Graph with Betti Computation
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /// Sparse attention graph using geometric locality.
 ///
-/// Instead of O(n²) dense attention, connects only points within
-/// ε-neighborhood: A(i,j) = 1 iff d(pᵢ, pⱼ) < ε.
+/// Instead of O(nÂ²) dense attention, connects only points within
+/// Îµ-neighborhood: A(i,j) = 1 iff d(páµ¢, pâ±¼) < Îµ.
 ///
-/// Computes Betti numbers β₀ (connected components) and β₁ (cycles).
+/// Computes Betti numbers Î²â‚€ (connected components) and Î²â‚ (cycles).
 #[derive(Debug)]
 pub struct SparseGraph<const D: usize> {
     pub points: [EpsilonPoint<D>; MAX_POINTS],
@@ -146,7 +146,7 @@ impl<const D: usize> SparseGraph<D> {
         (self.adjacency[i] & (1 << j)) != 0
     }
 
-    /// Compute β₀ (connected components) via DFS.
+    /// Compute Î²â‚€ (connected components) via DFS.
     pub fn compute_betti_0(&self) -> u32 {
         if self.point_count == 0 { return 0; }
 
@@ -178,9 +178,9 @@ impl<const D: usize> SparseGraph<D> {
         components
     }
 
-    /// Estimate β₁ (cycles) using Euler characteristic approximation.
+    /// Estimate Î²â‚ (cycles) using Euler characteristic approximation.
     ///
-    /// β₁ ≈ E - V + β₀ (ignoring higher homology)
+    /// Î²â‚ â‰ˆ E - V + Î²â‚€ (ignoring higher homology)
     pub fn estimate_betti_1(&self) -> u32 {
         let v = self.point_count as i32;
         let mut e = 0i32;
@@ -194,7 +194,7 @@ impl<const D: usize> SparseGraph<D> {
         if b1 > 0 { b1 as u32 } else { 0 }
     }
 
-    /// Topological shape signature: (β₀, β₁).
+    /// Topological shape signature: (Î²â‚€, Î²â‚).
     pub fn shape(&self) -> (u32, u32) {
         (self.compute_betti_0(), self.estimate_betti_1())
     }
@@ -206,9 +206,9 @@ impl<const D: usize> SparseGraph<D> {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SurgeryError
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /// Error conditions during topological surgery.
 #[derive(Debug, Clone, PartialEq)]
@@ -219,15 +219,15 @@ pub enum SurgeryError {
     TopologyMismatch { expected_b0: u32, actual_b0: u32 },
     /// Payload is empty (zero points)
     EmptyPayload,
-    /// Shell is degenerate (β₀ ≠ 1, not a single connected component)
+    /// Shell is degenerate (Î²â‚€ â‰  1, not a single connected component)
     DegenerateShell { shell_b0: u32 },
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ManifoldPayload — Teleportable Data Unit
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ManifoldPayload â€” Injectable Data Unit
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-/// A teleportable manifold payload — the data unit for context teleportation.
+/// A Injectable manifold payload â€” the data unit for context Context Transfer.
 ///
 /// Contains a pre-computed, topologically stable set of points from a
 /// higher manifold M_high where the Seal-Loop has already converged.
@@ -276,22 +276,22 @@ impl<const D: usize> Default for ManifoldPayload<D> {
     fn default() -> Self { Self::new() }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// HollowCubeManifold — S² Boundary with β₂ = 1
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// HollowCubeManifold â€” SÂ² Boundary with Î²â‚‚ = 1
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-/// The Hollow Cube Manifold — an S² boundary with Betti number β₂ = 1.
+/// The Hollow Cube Manifold â€” an SÂ² boundary with Betti number Î²â‚‚ = 1.
 ///
-/// Enforces the hollow geometric constraint where β₂ = 1 defines an
-/// interior "void" for receiving teleported context.
+/// Enforces the hollow geometric constraint where Î²â‚‚ = 1 defines an
+/// interior "void" for receiving Injected context.
 ///
 /// # Architecture
-/// - **Shell**: A [`SparseGraph`] representing the outer S² boundary
-/// - **Void**: An `Option<ManifoldPayload>` — the injection receptacle
+/// - **Shell**: A [`SparseGraph`] representing the outer SÂ² boundary
+/// - **Void**: An `Option<ManifoldPayload>` â€” the injection receptacle
 /// - **Assimilated**: Whether the wake-up rescan has completed
 ///
 /// # Invariants
-/// - Shell must maintain β₀ = 1 (single connected component)
+/// - Shell must maintain Î²â‚€ = 1 (single connected component)
 /// - Void holds at most one payload at a time
 /// - Assimilation merges payload points into the shell's active graph
 pub struct HollowCubeManifold<const D: usize> {
@@ -301,7 +301,7 @@ pub struct HollowCubeManifold<const D: usize> {
 }
 
 impl<const D: usize> HollowCubeManifold<D> {
-    /// Create a new hollow manifold with the given ε-neighborhood radius.
+    /// Create a new hollow manifold with the given Îµ-neighborhood radius.
     pub fn new(epsilon: f64) -> Self {
         Self {
             shell: SparseGraph::new(epsilon),
@@ -315,7 +315,7 @@ impl<const D: usize> HollowCubeManifold<D> {
         self.shell.add_point(point)
     }
 
-    /// Shell's topological shape (β₀, β₁).
+    /// Shell's topological shape (Î²â‚€, Î²â‚).
     pub fn shell_shape(&self) -> (u32, u32) { self.shell.shape() }
 
     /// Is the void empty and ready for injection?
@@ -330,14 +330,14 @@ impl<const D: usize> HollowCubeManifold<D> {
     ///
     /// # Surgery Protocol
     /// 1. Verify void is unoccupied
-    /// 2. Verify shell is non-degenerate (β₀ = 1)
+    /// 2. Verify shell is non-degenerate (Î²â‚€ = 1)
     /// 3. Verify payload is non-empty and topologically consistent
     /// 4. Write payload into the void
     ///
     /// # Safety
     /// Caller MUST hold a [`SurgeryPermit`](crate::SurgeryPermit) from the
     /// [`SurgeryGovernor`](crate::SurgeryGovernor) to ensure derivative
-    /// gain is zeroed. Enforced at the `sys_teleport_context` level.
+    /// gain is zeroed. Enforced at the `sys_context_inject` level.
     pub fn inject_into_void(
         &mut self,
         payload: ManifoldPayload<D>,
@@ -405,9 +405,9 @@ impl<const D: usize> HollowCubeManifold<D> {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Unit Tests
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #[cfg(test)]
 mod tests {
@@ -474,7 +474,7 @@ mod tests {
         hollow.add_shell_point(EpsilonPoint::new([0.0, 0.0, 0.0]));
         hollow.add_shell_point(EpsilonPoint::new([0.5, 0.0, 0.0]));
 
-        // Disconnected payload (β₀ = 2)
+        // Disconnected payload (Î²â‚€ = 2)
         let mut src = SparseGraph::<3>::new(0.1);
         src.add_point(EpsilonPoint::new([0.0, 0.0, 0.0]));
         src.add_point(EpsilonPoint::new([100.0, 100.0, 100.0]));

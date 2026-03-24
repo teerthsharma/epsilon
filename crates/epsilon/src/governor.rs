@@ -1,6 +1,6 @@
-//! ═══════════════════════════════════════════════════════════════════════════════
+﻿//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //! Epsilon Surgery Governor
-//! ═══════════════════════════════════════════════════════════════════════════════
+//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //!
 //! Implements the Adaptive Threshold Controller with Topological Surgery
 //! support. This is a self-contained PD-on-Manifold governor that extends
@@ -9,24 +9,24 @@
 //! # Control Law
 //!
 //! ```text
-//!   ε(t+1) = ε(t) + α·e(t) + β·de/dt
+//!   Îµ(t+1) = Îµ(t) + Î±Â·e(t) + Î²Â·de/dt
 //!
 //!   where:
-//!     e(t) = R_target - Δ(t)/ε(t)
+//!     e(t) = R_target - Î”(t)/Îµ(t)
 //!     R_target = Target tick rate (Hz)
 //! ```
 //!
 //! # Surgery Permit (Section 3.1)
 //!
-//! **Problem**: Instantaneous context injection causes de/dt → ∞, which
-//! violently triggers the derivative gain (β) and forces a Quiescent Reset,
-//! erasing the teleported data.
+//! **Problem**: Instantaneous context injection causes de/dt â†’ âˆž, which
+//! violently triggers the derivative gain (Î²) and forces a Quiescent Reset,
+//! erasing the Injected data.
 //!
 //! **Solution**: Before injection, the kernel acquires a `SurgeryPermit`.
 //! The governor suspends the derivative penalty for exactly one tick
-//! (β = 0 for t_surge) to absorb the state change without oscillation panic.
+//! (Î² = 0 for t_surge) to absorb the state change without oscillation panic.
 //!
-//! ═══════════════════════════════════════════════════════════════════════════════
+//! â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /// Default PD gains
 const DEFAULT_ALPHA: f64 = 0.01;
@@ -40,22 +40,22 @@ const EPSILON_INITIAL: f64 = 0.1;
 ///
 /// Implements the PD-on-Manifold control law from the AEGIS specification,
 /// extended with a surgery permit mechanism for safe instantaneous context
-/// injection during topological teleportation.
+/// injection during topological Context Transfer.
 ///
 /// # Stability Properties
-/// - Bounded: ε ∈ [EPSILON_MIN, EPSILON_MAX]
+/// - Bounded: Îµ âˆˆ [EPSILON_MIN, EPSILON_MAX]
 /// - Asymptotically stable around R_target
 /// - Damped oscillation via derivative term
 /// - Surgery-safe: derivative gain can be temporarily zeroed
 #[derive(Debug, Clone)]
 pub struct SurgeryGovernor {
-    /// Current adaptive threshold ε(t)
+    /// Current adaptive threshold Îµ(t)
     epsilon: f64,
     /// Previous error (for derivative calculation)
     last_error: f64,
-    /// Proportional gain (α)
+    /// Proportional gain (Î±)
     alpha: f64,
-    /// Derivative gain (β)
+    /// Derivative gain (Î²)
     beta: f64,
     /// Number of adaptations performed
     tick_count: u64,
@@ -78,10 +78,10 @@ impl SurgeryGovernor {
         Self { alpha, beta, ..Self::new() }
     }
 
-    /// Current threshold ε(t).
+    /// Current threshold Îµ(t).
     pub fn epsilon(&self) -> f64 { self.epsilon }
 
-    /// Current derivative gain β.
+    /// Current derivative gain Î².
     pub fn beta(&self) -> f64 { self.beta }
 
     /// Previous error signal.
@@ -90,9 +90,9 @@ impl SurgeryGovernor {
     /// Total ticks processed.
     pub fn tick_count(&self) -> u64 { self.tick_count }
 
-    /// Adapt ε based on observed deviation.
+    /// Adapt Îµ based on observed deviation.
     ///
-    /// Implements: `ε(t+1) = ε(t) + α·e(t) + β·de/dt`
+    /// Implements: `Îµ(t+1) = Îµ(t) + Î±Â·e(t) + Î²Â·de/dt`
     pub fn adapt(&mut self, deviation_delta: f64, dt: f64) -> f64 {
         if dt <= 0.0 || self.epsilon <= 0.0 {
             return self.epsilon;
@@ -110,27 +110,27 @@ impl SurgeryGovernor {
         self.epsilon
     }
 
-    /// Check if deviation exceeds current threshold: Δ(t) ≥ ε(t)?
+    /// Check if deviation exceeds current threshold: Î”(t) â‰¥ Îµ(t)?
     pub fn should_trigger(&self, deviation: f64) -> bool {
         deviation >= self.epsilon
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Topological Surgery Protocol
-    // ═══════════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /// Prepare the governor for topological surgery.
     ///
     /// Snapshots the current derivative state (`last_error`, `beta`), then
     /// zeros both to prevent the PD controller from oscillation panic when
-    /// de/dt → ∞ during instantaneous context injection.
+    /// de/dt â†’ âˆž during instantaneous context injection.
     ///
     /// Returns a [`SurgeryPermit`] that MUST be passed to
     /// [`complete_surgery()`](Self::complete_surgery) after injection.
     ///
     /// # Pre-Print Reference (Section 3.1)
     /// ```text
-    /// During surgery: β = 0, last_error = 0 for t_surge
+    /// During surgery: Î² = 0, last_error = 0 for t_surge
     /// This absorbs the state change without oscillation panic.
     /// ```
     pub fn prepare_for_surgery(&mut self) -> SurgeryPermit {
@@ -177,7 +177,7 @@ impl Default for SurgeryGovernor {
 /// # Invariants
 /// - Created only by [`SurgeryGovernor::prepare_for_surgery()`]
 /// - Consumed only by [`SurgeryGovernor::complete_surgery()`]
-/// - While this permit exists, the governor's β = 0 (derivative disabled)
+/// - While this permit exists, the governor's Î² = 0 (derivative disabled)
 #[derive(Debug)]
 pub struct SurgeryPermit {
     saved_last_error: f64,
@@ -185,16 +185,16 @@ pub struct SurgeryPermit {
 }
 
 impl SurgeryPermit {
-    /// Saved derivative gain β (for diagnostics).
+    /// Saved derivative gain Î² (for diagnostics).
     pub fn saved_beta(&self) -> f64 { self.saved_beta }
 
     /// Saved error signal (for diagnostics).
     pub fn saved_last_error(&self) -> f64 { self.saved_last_error }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Unit Tests
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #[cfg(test)]
 mod tests {
@@ -248,7 +248,7 @@ mod tests {
         // Permit saved original values
         assert!(permit.saved_beta() > 0.0);
 
-        // Adapt during surgery — no derivative panic
+        // Adapt during surgery â€” no derivative panic
         let eps = gov.adapt(100000.0, 0.001);
         assert!(eps > 0.0);
 
